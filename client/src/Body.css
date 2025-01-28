@@ -1,0 +1,61 @@
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    height: 100%;
+    background: url('image.jpg') no-repeat center center fixed;
+    background-size: cover;
+  }
+  
+  .body-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 740px;
+    text-align: center;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5); /* Adds overlay effect */
+    padding: 20px;
+  }
+  
+  .blog-title {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  
+  .welcome-container {
+    margin-bottom: 30px;
+  }
+  
+  .welcome-message {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+  }
+  
+  .quotes {
+    font-size: 1.2rem;
+    margin: 10px 0;
+  }
+  
+  .actions {
+    margin-top: 20px;
+  }
+  
+  .start-button {
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 25px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .start-button:hover {
+    background-color: #0056b3;
+  }
+  

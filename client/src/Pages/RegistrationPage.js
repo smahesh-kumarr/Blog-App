@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './RegistrationPage.css'; 
 import { useNavigate } from 'react-router-dom';
-
+import { Link } from 'react-router-dom';
 const RegistrationPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +53,8 @@ const RegistrationPage = () => {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button type="submit">Register</button>
+        <br />
+        <p>Already you have an Account <Link to="/login" className="Login"  >login</Link></p>
       </form>
     </div>
   );

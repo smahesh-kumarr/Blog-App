@@ -28,8 +28,9 @@ const LoginPage = () => {
           console.log(userInfo);
           setUserInfo(userInfo);
           alert("Login Successful");
-          navigate('/');
-        } else {
+          navigate('/homepage');
+        } else {+
+          
           // Extract error message from response
           const errorResponse = await response.json();
           alert(errorResponse.message || 'Invalid username or password');
@@ -62,6 +63,7 @@ const LoginPage = () => {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button type="submit">Login</button>
+
         </form>
         </div>
     </div>
