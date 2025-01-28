@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import './RegistrationPage.css'; 
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+// import HomePage from '../HomePage';
+
 const RegistrationPage = () => {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
@@ -16,7 +20,7 @@ const RegistrationPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, email, phone, password }),
       });
 
       const data = await response.json();
@@ -24,7 +28,7 @@ const RegistrationPage = () => {
       if (response.ok) {
         console.log('Registration Successful');
         alert('Registration successful!');
-        navigate('/');
+        navigate('/HomePage');
       } else {
         console.log('Registration Failed');
         alert(`Registration failed: ${data.message}`);
@@ -37,24 +41,57 @@ const RegistrationPage = () => {
   return (
     <div className="registration-container">
       <form className="registration-form" onSubmit={register}>
-        <h2>Registration Page</h2>
-        <label>Username</label>
-        <input
-          type="text"
-          placeholder="Enter your Name"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <label>Password</label>
-        <input
-          type="password"
-          placeholder="Enter your Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit">Register</button>
-        <br />
-        <p>Already you have an Account <Link to="/login" className="Login"  >login</Link></p>
+        <h2>Create Account</h2>
+        
+        <div className="form-group">
+          <label>Username</label>
+          <input
+            type="text"
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Phone Number</label>
+          <input className="phone-input"
+            type="tel"
+            placeholder="Enter your phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <button type="submit" className="register-button">Register</button>
+        
+        <div className="login-link">
+          Already have an account? <Link to="/login">Login here</Link>
+        </div>
       </form>
     </div>
   );
