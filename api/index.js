@@ -163,6 +163,55 @@ app.get('/blogs/recent', async (req, res) => {
     }
 });
 
+// Delete multiple blogs endpoint
+app.delete('/blogs/delete-multiple', async (req, res) => {
+    try {
+        const { blogIds } = req.body;
+        if (!blogIds || !Array.isArray(blogIds)) {
+            return res.status(400).json({ message: 'Invalid blog IDs' });
+        }
+
+        await Blog.deleteMany({ _id: { $in: blogIds } });
+        res.status(200).json({ message: 'Blogs deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting blogs:', err);
+        res.status(500).json({ message: 'Error deleting blogs' });
+    }
+});
+
+// Edit blog endpoint
+app.put('/blogs/:id', upload.single('image'), async (req, res) => {
+    try {
+        const { name, description, blogUrl } = req.body;
+        const blog = await Blog.findById(req.params.id);
+        
+        if (!blog) {
+            return res.status(404).json({ message: 'Blog not found' });
+        }
+
+        const updateData = {
+            name,
+            description,
+            blogUrl
+        };
+
+        if (req.file) {
+            updateData.imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+        }
+
+        const updatedBlog = await Blog.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        );
+
+        res.status(200).json(updatedBlog);
+    } catch (err) {
+        console.error('Error updating blog:', err);
+        res.status(500).json({ message: 'Error updating blog' });
+    }
+});
+
 mongoose.connect(url)
     .then(() => {
         console.log("Connected To MongoDB");
