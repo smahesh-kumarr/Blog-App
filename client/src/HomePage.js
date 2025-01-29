@@ -7,7 +7,8 @@ import { FaPlus, FaTimes, FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
 const HomePage = () => {
   const { userInfo } = useContext(UserContext);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [recentBlogs, setRecentBlogs] = useState([]);
+  const [allBlogs, setAllBlogs] = useState([]);
+  const [myBlogs, setMyBlogs] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -23,18 +24,220 @@ const HomePage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchRecentBlogs();
+    fetchAllBlogs();
   }, []);
 
-  const fetchRecentBlogs = async () => {
+  useEffect(() => {
+    if (userInfo && userInfo.email) {
+      fetchUserBlogs();
+    } else {
+      setMyBlogs([]);
+    }
+  }, [userInfo]);
+
+  const fetchAllBlogs = async () => {
     try {
       const response = await fetch('http://localhost:4000/blogs/recent');
       if (response.ok) {
         const data = await response.json();
-        setRecentBlogs(data);
+        setAllBlogs(data);
       }
     } catch (error) {
-      console.error('Error fetching blogs:', error);
+      console.error('Error fetching all blogs:', error);
+    }
+  };
+
+  const fetchUserBlogs = async () => {
+    if (!userInfo?.email) return;
+    try {
+      const response = await fetch(`http://localhost:4000/blogs/user/${encodeURIComponent(userInfo.email)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMyBlogs(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user blogs:', error);
+    }
+  };
+
+  const handleCreateBlog = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!userInfo || !userInfo.email) {
+      setError('Please log in to create a blog');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('name', newBlog.name);
+      formData.append('description', newBlog.description);
+      formData.append('blogUrl', newBlog.blogUrl);
+      formData.append('userEmail', userInfo.email);
+
+      if (newBlog.imageUrl) {
+        formData.append('image', newBlog.imageUrl);
+      } else {
+        setError('Please select an image');
+        return;
+      }
+
+      const response = await fetch('http://localhost:4000/blogs/create', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setNewBlog({ name: '', description: '', imageUrl: null, blogUrl: '' });
+        setPreviewImage(null);
+        await Promise.all([fetchAllBlogs(), fetchUserBlogs()]);
+        setActiveTab('my');
+        alert('Blog created successfully!');
+      } else {
+        setError(data.message || 'Error creating blog');
+      }
+    } catch (error) {
+      console.error('Error creating blog:', error);
+      setError('Error creating blog. Please try again.');
+    }
+  };
+
+  const handleUpdateBlog = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!userInfo || !userInfo.email) {
+      setError('Please log in to update the blog');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('name', newBlog.name);
+      formData.append('description', newBlog.description);
+      formData.append('blogUrl', newBlog.blogUrl);
+      formData.append('userEmail', userInfo.email);
+
+      if (newBlog.imageUrl instanceof File) {
+        formData.append('image', newBlog.imageUrl);
+      }
+
+      const response = await fetch(`http://localhost:4000/blogs/${editingBlogId}`, {
+        method: 'PUT',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setNewBlog({ name: '', description: '', imageUrl: null, blogUrl: '' });
+        setEditingBlogId(null);
+        setPreviewImage(null);
+        setIsEditMode(false);
+        await Promise.all([fetchAllBlogs(), fetchUserBlogs()]);
+        alert('Blog updated successfully!');
+      } else {
+        setError(data.message || 'Error updating blog');
+      }
+    } catch (error) {
+      console.error('Error updating blog:', error);
+      setError('Error updating blog. Please try again.');
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!userInfo || !userInfo.email) {
+      alert('Please log in to delete blogs');
+      return;
+    }
+
+    if (selectedBlogsToDelete.length === 0) {
+      alert('Please select blogs to delete');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete the selected blogs?')) {
+      try {
+        const response = await fetch('http://localhost:4000/blogs/delete-multiple', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            blogIds: selectedBlogsToDelete,
+            userEmail: userInfo.email 
+          })
+        });
+
+        if (response.ok) {
+          await Promise.all([fetchAllBlogs(), fetchUserBlogs()]);
+          setSelectedBlogsToDelete([]);
+          setIsDeleteMode(false);
+          alert('Selected blogs deleted successfully!');
+        } else {
+          const data = await response.json();
+          alert(data.message || 'Error deleting blogs');
+        }
+      } catch (error) {
+        console.error('Error deleting blogs:', error);
+        alert('Error deleting blogs');
+      }
+    }
+  };
+
+  const handleBlogClick = (url, e) => {
+    e.stopPropagation();
+    if (!isDeleteMode && !isEditMode) {
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+    setIsDeleteMode(false);
+    setSelectedBlogsToDelete([]);
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteMode(!isDeleteMode);
+    setIsEditMode(false);
+    setSelectedBlogsToDelete([]);
+  };
+
+  const handleBlogSelect = (blogId) => {
+    if (isEditMode) {
+      const blogToEdit = myBlogs.find(blog => blog._id === blogId);
+      if (blogToEdit && blogToEdit.userEmail === userInfo?.email) {
+        setNewBlog({
+          name: blogToEdit.name,
+          description: blogToEdit.description,
+          blogUrl: blogToEdit.blogUrl,
+          imageUrl: null
+        });
+        setEditingBlogId(blogId);
+        setShowCreateModal(true);
+        setIsEditMode(false);
+      } else {
+        alert('You can only edit your own blogs!');
+      }
+    } else if (isDeleteMode) {
+      const blogToDelete = myBlogs.find(blog => blog._id === blogId);
+      if (blogToDelete && blogToDelete.userEmail === userInfo?.email) {
+        setSelectedBlogsToDelete(prev => {
+          if (prev.includes(blogId)) {
+            return prev.filter(id => id !== blogId);
+          } else {
+            return [...prev, blogId];
+          }
+        });
+      } else {
+        alert('You can only delete your own blogs!');
+      }
     }
   };
 
@@ -50,135 +253,9 @@ const HomePage = () => {
     }
   };
 
-  const handleCreateBlog = async (e) => {
-    e.preventDefault();
-    setError('');
+  const isUserBlog = (blog) => userInfo && blog.userEmail === userInfo.email;
 
-    if (!userInfo || !userInfo.id) {
-      setError('Please log in to create a blog');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('name', newBlog.name);
-      formData.append('description', newBlog.description);
-      formData.append('blogUrl', newBlog.blogUrl);
-      formData.append('userId', userInfo.id);
-
-      if (newBlog.imageUrl) {
-        formData.append('image', newBlog.imageUrl);
-      } else {
-        setError('Please select an image');
-        return;
-      }
-
-      const url = editingBlogId 
-        ? `http://localhost:4000/blogs/${editingBlogId}`
-        : 'http://localhost:4000/blogs/create';
-
-      const method = editingBlogId ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method: method,
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setShowCreateModal(false);
-        fetchRecentBlogs();
-        setNewBlog({ name: '', description: '', imageUrl: null, blogUrl: '' });
-        setPreviewImage(null);
-        setEditingBlogId(null);
-        setIsEditMode(false);
-        alert(editingBlogId ? 'Blog updated successfully!' : 'Blog created successfully!');
-      } else {
-        setError(data.message || 'Error creating/updating blog');
-      }
-    } catch (error) {
-      console.error('Error creating/updating blog:', error);
-      setError('Error creating/updating blog. Please try again.');
-    }
-  };
-
-  const handleBlogClick = (url) => {
-    if (!isDeleteMode) {
-      window.open(url, '_blank');
-    }
-  };
-
-  const handleEditClick = () => {
-    setIsEditMode(true);
-    setIsDeleteMode(false);
-  };
-
-  const handleDeleteClick = () => {
-    setIsDeleteMode(!isDeleteMode);
-    setIsEditMode(false);
-    setSelectedBlogsToDelete([]);
-  };
-
-  const handleBlogSelect = (blogId) => {
-    if (isEditMode) {
-      const blogToEdit = recentBlogs.find(blog => blog._id === blogId);
-      if (blogToEdit) {
-        setNewBlog({
-          name: blogToEdit.name,
-          description: blogToEdit.description,
-          blogUrl: blogToEdit.blogUrl,
-          imageUrl: null
-        });
-        setEditingBlogId(blogId);
-        setShowCreateModal(true);
-        setIsEditMode(false);
-      }
-    } else if (isDeleteMode) {
-      setSelectedBlogsToDelete(prev => {
-        if (prev.includes(blogId)) {
-          return prev.filter(id => id !== blogId);
-        } else {
-          return [...prev, blogId];
-        }
-      });
-    }
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selectedBlogsToDelete.length === 0) {
-      alert('Please select blogs to delete');
-      return;
-    }
-
-    if (window.confirm('Are you sure you want to delete the selected blogs?')) {
-      try {
-        const response = await fetch('http://localhost:4000/blogs/delete-multiple', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ blogIds: selectedBlogsToDelete })
-        });
-
-        if (response.ok) {
-          fetchRecentBlogs();
-          setSelectedBlogsToDelete([]);
-          setIsDeleteMode(false);
-          alert('Selected blogs deleted successfully!');
-        } else {
-          alert('Error deleting blogs');
-        }
-      } catch (error) {
-        console.error('Error deleting blogs:', error);
-        alert('Error deleting blogs');
-      }
-    }
-  };
-
-  const filteredBlogs = activeTab === 'my' && userInfo
-    ? recentBlogs.filter(blog => blog.userId === userInfo.id)
-    : recentBlogs;
+  const displayedBlogs = activeTab === 'my' ? myBlogs : allBlogs;
 
   return (
     <div className="home-container">
@@ -189,6 +266,10 @@ const HomePage = () => {
             <h1>Welcome to BlogShare</h1>
             <p>Share your thoughts, ideas, and stories with the world</p>
             <button className="create-blog-btn" onClick={() => {
+              if (!userInfo) {
+                alert('Please log in to create a blog');
+                return;
+              }
               setShowCreateModal(true);
               setEditingBlogId(null);
               setNewBlog({ name: '', description: '', imageUrl: null, blogUrl: '' });
@@ -196,28 +277,30 @@ const HomePage = () => {
             }}>
               <FaPlus /> Create New Blog
             </button>
-            <div className="blog-actions-container">
-              <button 
-                className={`edit-blogs-btn ${isEditMode ? 'active' : ''}`} 
-                onClick={handleEditClick}
-              >
-                <FaEdit /> Edit Blog
-              </button>
-              <button 
-                className={`delete-blogs-btn ${isDeleteMode ? 'active' : ''}`} 
-                onClick={handleDeleteClick}
-              >
-                <FaTrash /> Delete Blogs
-              </button>
-              {isDeleteMode && selectedBlogsToDelete.length > 0 && (
+            {activeTab === 'my' && userInfo && (
+              <div className="blog-actions-container">
                 <button 
-                  className="confirm-delete-btn"
-                  onClick={handleDeleteSelected}
+                  className={`edit-blogs-btn ${isEditMode ? 'active' : ''}`} 
+                  onClick={handleEditClick}
                 >
-                  <FaCheck /> Confirm Delete ({selectedBlogsToDelete.length})
+                  <FaEdit /> Edit Blog
                 </button>
-              )}
-            </div>
+                <button 
+                  className={`delete-blogs-btn ${isDeleteMode ? 'active' : ''}`} 
+                  onClick={handleDeleteClick}
+                >
+                  <FaTrash /> Delete Blogs
+                </button>
+                {isDeleteMode && selectedBlogsToDelete.length > 0 && (
+                  <button 
+                    className="confirm-delete-btn"
+                    onClick={handleDeleteSelected}
+                  >
+                    <FaCheck /> Confirm Delete ({selectedBlogsToDelete.length})
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {showCreateModal && (
@@ -226,12 +309,13 @@ const HomePage = () => {
                 <button className="close-modal" onClick={() => {
                   setShowCreateModal(false);
                   setEditingBlogId(null);
+                  setPreviewImage(null);
                 }}>
                   <FaTimes />
                 </button>
                 <h2>{editingBlogId ? 'Edit Blog' : 'Create New Blog'}</h2>
                 {error && <div className="error-message">{error}</div>}
-                <form onSubmit={handleCreateBlog}>
+                <form onSubmit={editingBlogId ? handleUpdateBlog : handleCreateBlog}>
                   <div className="form-group">
                     <label>Blog Name:</label>
                     <input
@@ -264,6 +348,7 @@ const HomePage = () => {
                       type="file"
                       onChange={handleImageChange}
                       accept="image/*"
+                      required={!editingBlogId}
                     />
                     {previewImage && (
                       <img src={previewImage} alt="Preview" className="image-preview" />
@@ -282,7 +367,12 @@ const HomePage = () => {
             <div className="section-tabs">
               <button
                 className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
+                onClick={() => {
+                  setActiveTab('all');
+                  setIsEditMode(false);
+                  setIsDeleteMode(false);
+                  setSelectedBlogsToDelete([]);
+                }}
               >
                 All Blogs
               </button>
@@ -296,17 +386,17 @@ const HomePage = () => {
               )}
             </div>
             <div className="blogs-grid">
-              {filteredBlogs.map((blog) => (
+              {displayedBlogs.map((blog) => (
                 <div
                   key={blog._id}
-                  className={`blog-card ${(isEditMode || isDeleteMode) ? 'selectable' : ''} ${
+                  className={`blog-card ${
+                    (isEditMode || isDeleteMode) && activeTab === 'my' && isUserBlog(blog) ? 'selectable' : ''
+                  } ${
                     selectedBlogsToDelete.includes(blog._id) ? 'selected' : ''
                   }`}
                   onClick={() => {
-                    if (isEditMode || isDeleteMode) {
+                    if ((isEditMode || isDeleteMode) && activeTab === 'my' && isUserBlog(blog)) {
                       handleBlogSelect(blog._id);
-                    } else {
-                      handleBlogClick(blog.blogUrl);
                     }
                   }}
                 >
@@ -316,6 +406,12 @@ const HomePage = () => {
                   <div className="blog-info">
                     <h3>{blog.name}</h3>
                     <p>{blog.description}</p>
+                    <button 
+                      className="view-blog-btn"
+                      onClick={(e) => handleBlogClick(blog.blogUrl, e)}
+                    >
+                      View Blog
+                    </button>
                   </div>
                 </div>
               ))}

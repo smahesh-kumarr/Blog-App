@@ -53,7 +53,7 @@ const BlogSchema = new mongoose.Schema({
     description: { type: String, required: true },
     imageUrl: { type: String, required: true },
     blogUrl: { type: String, required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userEmail: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -125,8 +125,12 @@ app.post('/login', async (req, res) => {
 
 app.post('/blogs/create', upload.single('image'), async (req, res) => {
     try {
-        const { name, description, blogUrl, userId } = req.body;
+        const { name, description, blogUrl, userEmail } = req.body;
         
+        if (!userEmail) {
+            return res.status(400).json({ message: 'User email is required' });
+        }
+
         if (!req.file) {
             return res.status(400).json({ message: 'Image is required' });
         }
@@ -138,7 +142,7 @@ app.post('/blogs/create', upload.single('image'), async (req, res) => {
             description,
             imageUrl,
             blogUrl,
-            userId
+            userEmail
         });
 
         await newBlog.save();
@@ -152,10 +156,7 @@ app.post('/blogs/create', upload.single('image'), async (req, res) => {
 app.get('/blogs/recent', async (req, res) => {
     try {
         const blogs = await Blog.find()
-            .sort({ createdAt: -1 })
-            .limit(6)
-            .populate('userId', 'username');
-            
+            .sort({ createdAt: -1 });
         res.json(blogs);
     } catch (error) {
         console.error('Error fetching blogs:', error);
@@ -163,30 +164,27 @@ app.get('/blogs/recent', async (req, res) => {
     }
 });
 
-// Delete multiple blogs endpoint
-app.delete('/blogs/delete-multiple', async (req, res) => {
+app.get('/blogs/user/:email', async (req, res) => {
     try {
-        const { blogIds } = req.body;
-        if (!blogIds || !Array.isArray(blogIds)) {
-            return res.status(400).json({ message: 'Invalid blog IDs' });
-        }
-
-        await Blog.deleteMany({ _id: { $in: blogIds } });
-        res.status(200).json({ message: 'Blogs deleted successfully' });
-    } catch (err) {
-        console.error('Error deleting blogs:', err);
-        res.status(500).json({ message: 'Error deleting blogs' });
+        const { email } = req.params;
+        const blogs = await Blog.find({ userEmail: email })
+            .sort({ createdAt: -1 });
+        res.json(blogs);
+    } catch (error) {
+        console.error('Error fetching user blogs:', error);
+        res.status(500).json({ message: 'Error fetching user blogs' });
     }
 });
 
-// Edit blog endpoint
 app.put('/blogs/:id', upload.single('image'), async (req, res) => {
     try {
-        const { name, description, blogUrl } = req.body;
-        const blog = await Blog.findById(req.params.id);
-        
+        const { name, description, blogUrl, userEmail } = req.body;
+        const blogId = req.params.id;
+
+        // Check if blog exists and belongs to user
+        const blog = await Blog.findOne({ _id: blogId, userEmail });
         if (!blog) {
-            return res.status(404).json({ message: 'Blog not found' });
+            return res.status(404).json({ message: 'Blog not found or unauthorized' });
         }
 
         const updateData = {
@@ -200,15 +198,39 @@ app.put('/blogs/:id', upload.single('image'), async (req, res) => {
         }
 
         const updatedBlog = await Blog.findByIdAndUpdate(
-            req.params.id,
+            blogId,
             updateData,
             { new: true }
         );
 
-        res.status(200).json(updatedBlog);
-    } catch (err) {
-        console.error('Error updating blog:', err);
+        res.json({ message: 'Blog updated successfully', blog: updatedBlog });
+    } catch (error) {
+        console.error('Error updating blog:', error);
         res.status(500).json({ message: 'Error updating blog' });
+    }
+});
+
+app.delete('/blogs/delete-multiple', async (req, res) => {
+    try {
+        const { blogIds, userEmail } = req.body;
+        
+        if (!blogIds || !Array.isArray(blogIds) || !userEmail) {
+            return res.status(400).json({ message: 'Invalid request data' });
+        }
+
+        // Verify ownership of all blogs
+        const blogs = await Blog.find({ _id: { $in: blogIds } });
+        const unauthorized = blogs.some(blog => blog.userEmail !== userEmail);
+        
+        if (unauthorized) {
+            return res.status(403).json({ message: 'Unauthorized to delete some blogs' });
+        }
+
+        await Blog.deleteMany({ _id: { $in: blogIds }, userEmail });
+        res.json({ message: 'Blogs deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting blogs:', error);
+        res.status(500).json({ message: 'Error deleting blogs' });
     }
 });
 
