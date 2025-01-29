@@ -9,9 +9,9 @@ const Header = () => {
             <h1 className="app-title">Block APP</h1>
             <nav className="nav-bar">
             <Link to="/" className="nav-link">Home</Link>
-            <Link to="/about" className="nav-link">About</Link>
-            <Link to="/contact" className="nav-link">Contact</Link>
-            <Link to="/blogs" className="nav-link">Blogs</Link>
+            <Link to="/profile" className="nav-link">Profile</Link>
+            <Link to="/connect" className="nav-link">Connect</Link>
+            <Link to="/login" className="nav-link">Login</Link>
             </nav>
             </header>
             
