@@ -4,6 +4,23 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+const { promisify } = require('util');
+const unlinkAsync = promisify(fs.unlink);
+
+// Cloudinary configuration
+cloudinary.config({
+    cloud_name: 'dyiuob93s',
+    api_key: '292354667865257',
+    api_secret: 'VEvPK79lAIhrjfYW71BwtClzgXM'
+});
+
+// Verify Cloudinary configuration
+console.log('Cloudinary Configuration:', {
+    cloud_name: cloudinary.config().cloud_name,
+    api_key: cloudinary.config().api_key
+});
 
 const app = express();
 
@@ -13,28 +30,30 @@ app.use('/uploads', express.static('uploads'));
 
 const url = 'mongodb://localhost:27017/BlogApp';
 
-// Configure multer for image upload
+// Configure multer for file upload
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+    destination: function (req, file, cb) {
+        const uploadDir = 'uploads';
+        // Create uploads directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir);
+        }
+        cb(null, uploadDir);
     },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5000000 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        const fileTypes = /jpeg|jpg|png|gif/;
-        const mimeType = fileTypes.test(file.mimetype);
-        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-
-        if (mimeType && extname) {
-            return cb(null, true);
+    fileFilter: function (req, file, cb) {
+        // Accept images only
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return cb(new Error('Only image files are allowed!'), false);
         }
-        cb('Give proper files format to upload');
+        cb(null, true);
     }
 });
 
@@ -44,6 +63,8 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
+    profileImage: { type: String },
+    interests: { type: [String], default: [] },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -234,14 +255,116 @@ app.delete('/blogs/delete-multiple', async (req, res) => {
     }
 });
 
+// Get user profile endpoint
+app.get('/profile/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const user = await User.findOne({ email }).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        console.log(user);  
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ message: 'Error fetching profile' });
+    }
+});
+
+// Update user profile endpoint
+app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
+    try {
+        const { email, interests } = req.body;
+        
+        const updateData = {
+            interests: interests ? JSON.parse(interests) : []
+        };
+
+        if (req.file) {
+            try {
+                // Ensure file exists and is readable
+                await fs.promises.access(req.file.path);
+                console.log('File exists and is readable:', req.file.path);
+                
+                // Log file details
+                const stats = await fs.promises.stat(req.file.path);
+                console.log('File size:', stats.size, 'bytes');
+                
+                // Upload to Cloudinary with explicit error handling
+                const uploadOptions = {
+                    folder: 'profile_images',
+                    width: 500,
+                    height: 500,
+                    crop: 'fill',
+                    gravity: 'face',
+                    resource_type: 'auto'
+                };
+                
+                console.log('Attempting Cloudinary upload with options:', uploadOptions);
+                
+                const result = await cloudinary.uploader.upload(req.file.path, uploadOptions);
+                
+                if (!result || !result.secure_url) {
+                    throw new Error('Cloudinary upload failed to return secure URL');
+                }
+
+                console.log('Cloudinary upload successful:', {
+                    url: result.secure_url,
+                    public_id: result.public_id
+                });
+
+                // Add Cloudinary URL to updateData
+                updateData.profileImage = result.secure_url;
+
+                // Delete local file
+                await unlinkAsync(req.file.path)
+                    .then(() => console.log('Successfully deleted local file:', req.file.path))
+                    .catch(err => console.error('Error deleting local file:', err));
+
+            } catch (error) {
+                console.error('Detailed upload error:', {
+                    message: error.message,
+                    code: error.http_code,
+                    stack: error.stack
+                });
+                
+                // Try to clean up the file even if upload failed
+                try {
+                    await unlinkAsync(req.file.path);
+                } catch (unlinkError) {
+                    console.error('Error cleaning up file after failed upload:', unlinkError);
+                }
+                
+                return res.status(500).json({ 
+                    message: 'Error uploading image',
+                    details: error.message
+                });
+            }
+        }
+
+        const user = await User.findOneAndUpdate(
+            { email },
+            updateData,
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({ 
+            message: 'Error updating profile',
+            details: error.message
+        });
+    }
+});
+
 mongoose.connect(url)
     .then(() => {
         console.log("Connected To MongoDB");
-        // Create uploads directory if it doesn't exist
-        const fs = require('fs');
-        if (!fs.existsSync('uploads')) {
-            fs.mkdirSync('uploads');
-        }
         app.listen(4000, () => {
             console.log("Server is running on port 4000");
         });

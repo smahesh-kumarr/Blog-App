@@ -6,6 +6,7 @@ import RegistrationPage from './Pages/RegistrationPage';
 import './App.css'; 
 import LoginPage from './Pages/LoginPage';
 import HomePage from './HomePage';
+import Profile from './Profile';
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
             <Route path="/register" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/homepage" element={<HomePage />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </div>
       </UserContextProvider>
