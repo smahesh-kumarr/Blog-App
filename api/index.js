@@ -9,14 +9,14 @@ const fs = require('fs');
 const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 
-// Cloudinary configuration
+
 cloudinary.config({
     cloud_name: 'dyiuob93s',
     api_key: '292354667865257',
     api_secret: 'VEvPK79lAIhrjfYW71BwtClzgXM'
 });
 
-// Verify Cloudinary configuration
+
 console.log('Cloudinary Configuration:', {
     cloud_name: cloudinary.config().cloud_name,
     api_key: cloudinary.config().api_key
@@ -30,11 +30,10 @@ app.use('/uploads', express.static('uploads'));
 
 const url = 'mongodb://localhost:27017/BlogApp';
 
-// Configure multer for file upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadDir = 'uploads';
-        // Create uploads directory if it doesn't exist
+
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir);
         }
@@ -49,7 +48,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
     storage: storage,
     fileFilter: function (req, file, cb) {
-        // Accept images only
+
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
             return cb(new Error('Only image files are allowed!'), false);
         }
@@ -57,7 +56,6 @@ const upload = multer({
     }
 });
 
-// User Schema
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
@@ -68,7 +66,6 @@ const UserSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Blog Schema
 const BlogSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
@@ -85,22 +82,19 @@ app.post('/register', async(req, res) => {
     const { username, email, phone, password } = req.body;
     
     try {
-        // Check if username already exists
+
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             return res.status(400).json({ message: 'Username already exists' });
         }
 
-        // Check if email already exists
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
             return res.status(400).json({ message: 'Email already exists' });
         }
 
-        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Create new user
+
         const newUser = new User({
             username,
             email,
@@ -120,19 +114,18 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Find user by email
+
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Check password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // Send user info (excluding password)
+
         res.json({
             id: user._id,
             email: user.email,
@@ -255,7 +248,7 @@ app.delete('/blogs/delete-multiple', async (req, res) => {
     }
 });
 
-// Get user profile endpoint
+
 app.get('/profile/:email', async (req, res) => {
     try {
         const { email } = req.params;
@@ -271,7 +264,7 @@ app.get('/profile/:email', async (req, res) => {
     }
 });
 
-// Update user profile endpoint
+
 app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
     try {
         const { email, interests } = req.body;
@@ -282,15 +275,13 @@ app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
 
         if (req.file) {
             try {
-                // Ensure file exists and is readable
+
                 await fs.promises.access(req.file.path);
                 console.log('File exists and is readable:', req.file.path);
-                
-                // Log file details
+
                 const stats = await fs.promises.stat(req.file.path);
                 console.log('File size:', stats.size, 'bytes');
-                
-                // Upload to Cloudinary with explicit error handling
+
                 const uploadOptions = {
                     folder: 'profile_images',
                     width: 500,
@@ -313,10 +304,9 @@ app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
                     public_id: result.public_id
                 });
 
-                // Add Cloudinary URL to updateData
+ 
                 updateData.profileImage = result.secure_url;
 
-                // Delete local file
                 await unlinkAsync(req.file.path)
                     .then(() => console.log('Successfully deleted local file:', req.file.path))
                     .catch(err => console.error('Error deleting local file:', err));
@@ -327,8 +317,7 @@ app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
                     code: error.http_code,
                     stack: error.stack
                 });
-                
-                // Try to clean up the file even if upload failed
+
                 try {
                     await unlinkAsync(req.file.path);
                 } catch (unlinkError) {

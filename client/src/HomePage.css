@@ -11,7 +11,7 @@
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    height: 300vh; /* Ensure it covers the full viewport height */
+    height: 170vh; 
 }
 
 .main-content {
@@ -20,7 +20,7 @@
   margin: 0 auto;
 }
 
-/* Welcome Section */
+
 .welcome-section {
   text-align: center;
   padding: 4rem 0;
@@ -63,7 +63,6 @@
   box-shadow: 0 6px 20px rgba(238, 82, 83, 0.3);
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -200,7 +199,7 @@
   text-align: center;
 }
 
-/* Recent Blogs Section */
+
 .recent-blogs {
   padding: 2rem 0;
 }
