@@ -16,7 +16,7 @@ const LoginPage = () => {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:4000/login', {
+            const response = await fetch('http://backend-service.default.svc.cluster.local:5000/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

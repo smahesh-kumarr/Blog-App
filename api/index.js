@@ -159,7 +159,7 @@ app.post('/blogs/create', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: 'Image is required' });
         }
 
-        const imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+        const imageUrl = `http://backend-service.default.svc.cluster.local:5000/uploads/${req.file.filename}`;
 
         const newBlog = new Blog({
             name,
@@ -218,7 +218,7 @@ app.put('/blogs/:id', upload.single('image'), async (req, res) => {
         };
 
         if (req.file) {
-            updateData.imageUrl = `http://localhost:4000/uploads/${req.file.filename}`;
+            updateData.imageUrl = `http://backend-service.default.svc.cluster.local:5000/uploads/${req.file.filename}`;
         }
 
         const updatedBlog = await Blog.findByIdAndUpdate(
