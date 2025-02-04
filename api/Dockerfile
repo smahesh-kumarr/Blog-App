@@ -1,18 +1,19 @@
+FROM node:22.13-alpine
 
-FROM node:22.13-alpine 
+WORKDIR /app
 
-WORKDIR /app 
+COPY package*.json ./
 
-COPY package*.json ./ 
+# Install build dependencies and bcrypt requirements
+RUN apk add --no-cache --virtual .build-deps \
+    python3 \
+    make \
+    g++ \
+    && npm install \
+    && apk del .build-deps
 
-RUN npm install 
+COPY . .
 
-# Install build dependencies for bcrypt
-RUN apk add --no-cache python3 make g++ && npm install && apk del python3 make g++
-
-
-COPY . . 
-
-EXPOSE 4000 
+EXPOSE 4000
 
 CMD ["npx", "nodemon", "index.js"]

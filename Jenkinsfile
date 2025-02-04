@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONAR_URL = "http://54.85.130.134:9000"
-        DOCKER_REGISTRY = "https://index.docker.io/v1/"
+        DOCKER_REGISTRY = "https://index.docker.io/"
         DOCKER_IMAGE_FRONTEND = "maheshkumars772/frontend:latest"
         DOCKER_IMAGE_BACKEND = "maheshkumars772/backend:latest"
         REGISTRY_CREDENTIALS = credentials('docker-cred')
@@ -76,8 +76,20 @@ pipeline {
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
                                 sh '''
-                                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
-                                    docker build -t ${DOCKER_IMAGE_FRONTEND} ./client
+                                    # Enable Docker BuildKit
+                                    export DOCKER_BUILDKIT=1
+                                    
+                                    # Clean Docker cache
+                                    docker builder prune -af
+                                    
+                                    # Build with cache optimization
+                                    docker build \
+                                        --progress=plain \
+                                        --no-cache \
+                                        -t ${DOCKER_IMAGE_FRONTEND} \
+                                        ./client
+                                    
+                                    # Push and cleanup
                                     docker push ${DOCKER_IMAGE_FRONTEND}
                                     docker rmi ${DOCKER_IMAGE_FRONTEND}
                                 '''
@@ -127,9 +139,29 @@ pipeline {
                 stage('Backend Docker') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}", "./api")
-                            docker.withRegistry("${DOCKER_REGISTRY}", "docker-cred") {
-                                docker.image("${DOCKER_IMAGE_BACKEND}").push()
+                            withCredentials([usernamePassword(
+                                credentialsId: 'docker-cred',
+                                usernameVariable: 'DOCKER_USER',
+                                passwordVariable: 'DOCKER_PASS'
+                            )]) {
+                                sh '''
+                                    # Enable Docker BuildKit
+                                    export DOCKER_BUILDKIT=1
+                                    
+                                    # Clean Docker cache
+                                    docker builder prune -af
+                                    
+                                    # Build with cache optimization
+                                    docker build \
+                                        --progress=plain \
+                                        --no-cache \
+                                        -t ${DOCKER_IMAGE_FRONTEND} \
+                                        ./client
+                                    
+                                    # Push and cleanup
+                                    docker push ${DOCKER_IMAGE_FRONTEND}
+                                    docker rmi ${DOCKER_IMAGE_FRONTEND}
+                                '''
                             }
                         }
                     }
