@@ -75,24 +75,28 @@ pipeline {
                                 usernameVariable: 'DOCKER_USER',
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
+                                script {
+            withCredentials([usernamePassword(
+                credentialsId: 'docker-cred',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+                    )]) {
                                 sh '''
-                                    # Enable Docker BuildKit
-                                    export DOCKER_BUILDKIT=1
-                                    
-                                    # Clean Docker cache
-                                    docker builder prune -af
-                                    
-                                    # Build with cache optimization
-                                    docker build \
-                                        --progress=plain \
-                                        --no-cache \
-                                        -t ${DOCKER_IMAGE_FRONTEND} \
-                                        ./client
-                                    
-                                    # Push and cleanup
-                                    docker push ${DOCKER_IMAGE_FRONTEND}
-                                    docker rmi ${DOCKER_IMAGE_FRONTEND}
-                                '''
+                                # Install and configure buildx
+                                docker buildx install
+                                docker buildx create --use
+                                
+                                # Build with buildx
+                                docker buildx build \
+                                    --platform linux/amd64 \
+                                    --tag ${DOCKER_IMAGE_FRONTEND} \
+                                    --push \
+                                    --no-cache \
+                                    ./client
+                                
+                                # Cleanup
+                                docker buildx rm
+                            '''
                             }
                         }
                     }
@@ -144,24 +148,28 @@ pipeline {
                                 usernameVariable: 'DOCKER_USER',
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
-                                sh '''
-                                    # Enable Docker BuildKit
-                                    export DOCKER_BUILDKIT=1
-                                    
-                                    # Clean Docker cache
-                                    docker builder prune -af
-                                    
-                                    # Build with cache optimization
-                                    docker build \
-                                        --progress=plain \
-                                        --no-cache \
-                                        -t ${DOCKER_IMAGE_FRONTEND} \
-                                        ./client
-                                    
-                                    # Push and cleanup
-                                    docker push ${DOCKER_IMAGE_FRONTEND}
-                                    docker rmi ${DOCKER_IMAGE_FRONTEND}
-                                '''
+                                script {
+            withCredentials([usernamePassword(
+                credentialsId: 'docker-cred',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                            sh '''
+                                # Install and configure buildx
+                                docker buildx install
+                                docker buildx create --use
+                                
+                                # Build with buildx
+                                docker buildx build \
+                                    --platform linux/amd64 \
+                                    --tag ${DOCKER_IMAGE_BACKEND} \
+                                    --push \
+                                    --no-cache \
+                                    ./api
+                                
+                                # Cleanup
+                                docker buildx rm
+                            '''
                             }
                         }
                     }
@@ -169,7 +177,15 @@ pipeline {
             }
         }
     }
-
+    post {
+    failure {
+        sh '''
+            docker buildx rm || true
+            docker container prune -f
+            docker image prune -af
+        '''
+    }
+}
     post {
         always {
             cleanWs()

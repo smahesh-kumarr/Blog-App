@@ -1,5 +1,5 @@
 # Stage 1: Build environment
-FROM node:22.13-alpine as builder
+FROM node:22.13-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --production
