@@ -1,48 +1,46 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:latest'
-        }
-    }
+    agent any
+
     environment {
         SONAR_URL = "http://54.85.130.134:9000"
         DOCKER_IMAGE_FRONTEND = "maheshkumars772/frontend:latest"
         DOCKER_IMAGE_BACKEND = "maheshkumars772/backend:latest"
         REGISTRY_CREDENTIALS = credentials('docker-cred')
     }
+
     stages {
         stage('Checkout') {
             steps {
+                sh 'mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts'
                 git branch: 'main', url: 'https://github.com/smahesh-kumarr/Blog-App.git'
             }
         }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    mkdir -p ~/.npm && sudo chown -R $(whoami) ~/.npm
+                    cd client && npm cache clean --force && npm install --legacy-peer-deps
+                    cd api && npm cache clean --force && npm install --legacy-peer-deps
+                '''
+            }
+        }
+
         stage('Build & Test in Parallel') {
             parallel {
                 stage('Frontend Build & Test') {
                     steps {
-                        sh '''
-                            cd client
-                            rm -rf node_modules package-lock.json
-                            npm cache clean --force
-                            npm install --legacy-peer-deps
-                            npm run build
-                            npm test
-                        '''
+                        sh 'cd client && npm run build && npm test'
                     }
                 }
                 stage('Backend Build & Test') {
                     steps {
-                        sh '''
-                            cd api
-                            rm -rf node_modules package-lock.json
-                            npm cache clean --force
-                            npm install --legacy-peer-deps
-                            npm test
-                        '''
+                        sh 'cd api && npm test'
                     }
                 }
             }
         }
+
         stage('Static Code Analysis - Parallel') {
             parallel {
                 stage('SonarQube Frontend') {
@@ -75,6 +73,7 @@ pipeline {
                 }
             }
         }
+
         stage('Build & Push Docker Images - Parallel') {
             parallel {
                 stage('Build & Push Frontend') {
