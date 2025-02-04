@@ -174,8 +174,7 @@ pipeline {
             docker image prune -af
         '''
     }
-}
-    post {
+
         always {
             cleanWs()
         }
