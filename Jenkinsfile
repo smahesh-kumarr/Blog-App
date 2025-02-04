@@ -128,25 +128,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            // Clean workspace to save disk space
-            deleteDir()
-            
-            // JUnit test reporting
-            junit allowEmptyResults: true, 
-                testResults: '**/test-results.xml'
-        }
-        success {
-            slackSend color: "good", 
-                     message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                     channel: '#build-notifications'
-        }
-        failure {
-            slackSend color: "danger", 
-                     message: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                     channel: '#build-notifications'
-        }
-    }
 }
