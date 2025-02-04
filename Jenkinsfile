@@ -19,7 +19,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    mkdir -p ~/.npm && sudo chown -R $(whoami) ~/.npm
+                    mkdir -p ~/.npm
                     cd client && npm cache clean --force && npm install --legacy-peer-deps
                     cd api && npm cache clean --force && npm install --legacy-peer-deps
                 '''
