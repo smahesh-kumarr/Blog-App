@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'node:22.13-alpine'
+            image 'node:latest'
         }
     }
     environment {
@@ -112,8 +112,8 @@ pipeline {
                             sh '''
                                 git config user.email "maheshkumar08042006@gmail.com"
                                 git config user.name "smahesh-kumarr"
-                                sed -i "s/replaceImageTag/latest/g" ../argo-manifests/backend/deployment.yaml
-                                git add ../argo-manifests/backend/deployment.yaml
+                                sed -i "s/replaceImageTag/latest/g" ../argo-manifests/backend/deployment.yml
+                                git add ../argo-manifests/backend/deployment.yml
                                 git commit -m "Update backend image to latest"
                                 git push https://${GITHUB_TOKEN}@github.com/smahesh-kumarr/argo-manifests.git HEAD:main
                             '''
