@@ -8,7 +8,8 @@ pipeline {
         REGISTRY_CREDENTIALS = credentials('docker-cred')
     }
 
-    stage('Checkout') {
+    stages {
+        stage('Checkout') {
     steps {
         sh 'rm -rf *'  // Ensure a clean workspace
         sh 'mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts'
@@ -17,7 +18,7 @@ pipeline {
     }
 }
 
-
+    
     stage('Install Dependencies') {
     steps {
         sh '''
@@ -109,4 +110,4 @@ pipeline {
             }
         }
     }
-
+}
