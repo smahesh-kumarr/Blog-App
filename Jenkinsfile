@@ -24,6 +24,8 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash -e
                             cd client
+                            # Downgrade React to v18 to match testing-library requirements
+                            npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps --save
                             npm install --legacy-peer-deps --force --loglevel=error
                             npm install --save-dev \
                                 @testing-library/jest-dom@6.1.4 \
@@ -128,5 +130,3 @@ pipeline {
             }
         }
     }
-
-}
