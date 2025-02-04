@@ -11,6 +11,17 @@ pipeline {
     }
 
     stages {
+        stage('System Cleanup') {
+            steps {
+                sh '''#!/bin/bash -e
+                    docker system prune -af || true
+                    npm cache clean --force
+                    find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
+                    df -h
+                    du -sh *
+                '''
+            }
+        }
         stage('Clean Workspace & Checkout') {
             steps {
                 cleanWs()
@@ -59,9 +70,17 @@ pipeline {
                 stage('Frontend Docker') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_FRONTEND}", "./client")
-                            docker.withRegistry("${DOCKER_REGISTRY}", "docker-cred") {
-                                docker.image("${DOCKER_IMAGE_FRONTEND}").push()
+                            withCredentials([usernamePassword(
+                                credentialsId: 'docker-cred',
+                                usernameVariable: 'DOCKER_USER',
+                                passwordVariable: 'DOCKER_PASS'
+                            )]) {
+                                sh '''
+                                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                                    docker build -t ${DOCKER_IMAGE_FRONTEND} ./client
+                                    docker push ${DOCKER_IMAGE_FRONTEND}
+                                    docker rmi ${DOCKER_IMAGE_FRONTEND}
+                                '''
                             }
                         }
                     }
