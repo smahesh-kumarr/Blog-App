@@ -51,7 +51,7 @@ pipeline {
                     }
                 }
 
-                stage('Frontend SonarQube') {
+                stage('Frontend SonarQube Code Analysis') {
                     steps {
                         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
                             sh '''
@@ -67,7 +67,7 @@ pipeline {
                     }
                 }
 
-                stage('Frontend Docker') {
+                stage('Frontend Docker Build & Push') {
                     steps {
                         script {
                             withCredentials([usernamePassword(
@@ -118,7 +118,7 @@ pipeline {
                     }
                 }
 
-                stage('Backend SonarQube') {
+                stage('Backend SonarQube Code Analysis') {
                     steps {
                         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
                             sh '''
@@ -134,7 +134,7 @@ pipeline {
                     }
                 }
 
-                stage('Backend Docker') {
+                stage('Backend Docker Build & Push') {
                     steps {
                         script {
                             withCredentials([usernamePassword(
@@ -171,6 +171,7 @@ pipeline {
         always {
             cleanWs()
             sh 'docker logout || true'
+            sh 'success'
         }
     }
 }
