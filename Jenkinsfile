@@ -66,7 +66,17 @@ pipeline {
                         }
                     }
                 }
-
+                stages('Docker set-up'){
+                    stage('Setup Docker Buildx') {
+                            steps {
+                                sh '''#!/bin/bash -e
+                                    # Install Docker Buildx
+                                    mkdir -p ~/.docker/cli-plugins
+                                    wget https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-amd64 -O ~/.docker/cli-plugins/docker-buildx                                        chmod +x ~/.docker/cli-plugins/docker-buildx
+                                    docker buildx version
+                                '''
+                            }
+                        }
                 stage('Frontend Docker') {
                     steps {
                         script {
@@ -97,7 +107,7 @@ pipeline {
                 }
             }
         }
-
+}
         stage('Backend Pipeline') {
             stages {
                 stage('Backend Dependencies') {
@@ -133,7 +143,18 @@ pipeline {
                         }
                     }
                 }
-
+                stages('Docker set-up'){
+                    stage('Setup Docker Buildx') {
+            steps {
+                sh '''#!/bin/bash -e
+                    # Install Docker Buildx
+                    mkdir -p ~/.docker/cli-plugins
+                    wget https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-amd64 -O ~/.docker/cli-plugins/docker-buildx
+                    chmod +x ~/.docker/cli-plugins/docker-buildx
+                    docker buildx version
+                '''
+            }
+        }
                 stage('Backend Docker') {
                     steps {
                         script {
@@ -166,6 +187,7 @@ pipeline {
             }
         }
     }
+}
     post {
     failure {
         sh '''
