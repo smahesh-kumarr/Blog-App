@@ -1,10 +1,9 @@
-FROM node:18-alpine  # Using LTS version
+FROM node:18-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
 
-# Install all dependencies including devDependencies
 RUN npm install --legacy-peer-deps
 
 COPY . .
