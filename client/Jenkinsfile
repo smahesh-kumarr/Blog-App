@@ -1,0 +1,69 @@
+pipeline {
+  agent {
+    docker {
+      image 'node:22.13-alpine'
+    }
+  }
+  environment {
+    DOCKER_IMAGE = "maheshkumars772/frontend:latest"
+    REGISTRY_CREDENTIALS = credentials('docker-cred')
+    SONAR_URL = "http://3.90.88.74:9000"
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/smahesh-kumarr/Blog-App.git'
+      }
+    }
+    stage('Install Dependencies & Build') {
+      steps {
+        sh 'cd client && npm install && npm run build'
+      }
+    }
+    stage('Static Code Analysis - Frontend') {
+    steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+            sh '''
+                cd client
+                npx sonar-scanner \
+                -Dsonar.projectKey=frontend-project \
+                -Dsonar.sources=src \
+                -Dsonar.host.url=${SONAR_URL} \
+                -Dsonar.login=$SONAR_AUTH_TOKEN
+            '''
+        }
+    }
+}
+    stage('Build and Push Docker Image') {
+      steps {
+        script {
+          sh '''
+            cd client
+            docker build -t ${DOCKER_IMAGE} .
+          '''
+          def dockerImage = docker.image("${DOCKER_IMAGE}")
+          docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+    stage('Update Kubernetes Deployment') {
+      steps {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            rm -rf argo-manifests
+            git clone https://${GITHUB_TOKEN}@github.com/smahesh-kumarr/argo-manifests.git
+            cd argo-manifests/frontend
+            sed -i "s|image: maheshkumars772/frontend:.*|image: maheshkumars772/frontend:latest|g" deployment.yml
+            git config user.email "maheshkumar08042006@gmail.com"
+            git config user.name "smahesh-kumarr"
+            git add deployment.yaml
+            git commit -m "Update frontend image to latest"
+            git push https://${GITHUB_TOKEN}@github.com/smahesh-kumarr/argo-manifests.git HEAD:main
+          '''
+        }
+      }
+    }
+  }
+}

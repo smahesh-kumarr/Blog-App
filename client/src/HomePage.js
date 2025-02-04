@@ -37,7 +37,7 @@ const HomePage = () => {
 
   const fetchAllBlogs = async () => {
     try {
-      const response = await fetch('http://backend-service.default.svc.cluster.local:5000/blogs/recent');
+      const response = await fetch('http://127.0.0.1:57374/blogs/recent');
       if (response.ok) {
         const data = await response.json();
         setAllBlogs(data);
@@ -50,7 +50,7 @@ const HomePage = () => {
   const fetchUserBlogs = async () => {
     if (!userInfo?.email) return;
     try {
-      const response = await fetch(`http://backend-service.default.svc.cluster.local:5000/blogs/user/${encodeURIComponent(userInfo.email)}`);
+      const response = await fetch(`http://127.0.0.1:57374/blogs/user/${encodeURIComponent(userInfo.email)}`);
       if (response.ok) {
         const data = await response.json();
         setMyBlogs(data);
@@ -83,7 +83,7 @@ const HomePage = () => {
         return;
       }
 
-      const response = await fetch('http://backend-service.default.svc.cluster.local:5000/blogs/create', {
+      const response = await fetch('http://127.0.0.1:57374/blogs/create', {
         method: 'POST',
         body: formData
       });
@@ -126,7 +126,7 @@ const HomePage = () => {
         formData.append('image', newBlog.imageUrl);
       }
 
-      const response = await fetch(`http://backend-service.default.svc.cluster.local:5000/blogs/${editingBlogId}`, {
+      const response = await fetch(`http://127.0.0.1:57374/blogs/${editingBlogId}`, {
         method: 'PUT',
         body: formData
       });
@@ -163,7 +163,7 @@ const HomePage = () => {
 
     if (window.confirm('Are you sure you want to delete the selected blogs?')) {
       try {
-        const response = await fetch('http://backend-service.default.svc.cluster.local:5000/blogs/delete-multiple', {
+        const response = await fetch('http://127.0.0.1:57374/blogs/delete-multiple', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

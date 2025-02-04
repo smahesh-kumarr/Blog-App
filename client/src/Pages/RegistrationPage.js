@@ -15,7 +15,7 @@ const RegistrationPage = () => {
     e.preventDefault(); 
 
     try {
-      const response = await fetch('http://backend-service.default.svc.cluster.local:5000/register', {
+      const response = await fetch('http://127.0.0.1:57374/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

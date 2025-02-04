@@ -159,7 +159,7 @@ app.post('/blogs/create', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: 'Image is required' });
         }
 
-        const imageUrl = `http://backend-service.default.svc.cluster.local:5000/uploads/${req.file.filename}`;
+        const imageUrl = `http://backend-service:5000/uploads/${req.file.filename}`;
 
         const newBlog = new Blog({
             name,
@@ -218,7 +218,7 @@ app.put('/blogs/:id', upload.single('image'), async (req, res) => {
         };
 
         if (req.file) {
-            updateData.imageUrl = `http://backend-service.default.svc.cluster.local:5000/uploads/${req.file.filename}`;
+            updateData.imageUrl = `http://backend-service:5000/uploads/${req.file.filename}`;
         }
 
         const updatedBlog = await Blog.findByIdAndUpdate(
@@ -365,13 +365,22 @@ app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
     }
 });
 
-mongoose.connect(mongoURI)
-    .then(() => {
-        console.log("Connected To MongoDB");
-        app.listen(4000, () => {
-            console.log("Server is running on port 4000");
-        });
-    })
-    .catch((err) => {
-        console.log("Failed To Connect", err);
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000, // Increase timeout to 30s
+    socketTimeoutMS: 30000,
+})
+.then(() => {
+    console.log("✅ Connected to MongoDB");
+    app.listen(4000, () => {
+        console.log("🚀 Server is running on port 4000");
     });
+})
+.catch((err) => {
+    console.error("❌ MongoDB Connection Failed:", err.message);
+    console.log("Retrying in 5 seconds...");
+    setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
+});
+
+connectWithRetry();

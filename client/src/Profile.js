@@ -25,7 +25,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`http://backend-service.default.svc.cluster.local:5000/profile/${userInfo.email}`);
+      const response = await fetch(`http://127.0.0.1:57374/profile/${userInfo.email}`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
@@ -81,7 +81,7 @@ const Profile = () => {
         formData.append('profileImage', profile.profileImage);
       }
 
-      const response = await fetch('http://backend-service.default.svc.cluster.local:5000/profile/update', {
+      const response = await fetch('http://127.0.0.1:57374/profile/update', {
         method: 'PUT',
         body: formData
       });
