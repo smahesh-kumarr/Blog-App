@@ -107,9 +107,14 @@ pipeline {
                 stage('Backend Build') {
                     steps {
                         sh '''#!/bin/bash -e
-                            cd api
-                            npm run build
-                        '''
+                    cd api
+                    # Conditional build execution
+                    if npm run | grep -q 'build'; then
+                        npm run build
+                    else
+                        echo "Skipping build as no build script exists"
+                    fi
+                '''
                     }
                 }
 
