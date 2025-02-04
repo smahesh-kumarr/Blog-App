@@ -8,23 +8,33 @@ pipeline {
         REGISTRY_CREDENTIALS = credentials('docker-cred')
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                sh 'mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts'
-                git branch: 'main', url: 'https://github.com/smahesh-kumarr/Blog-App.git'
-            }
-        }
+    stage('Checkout') {
+    steps {
+        sh 'rm -rf *'  // Ensure a clean workspace
+        sh 'mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts'
+        git branch: 'main', url: 'https://github.com/smahesh-kumarr/Blog-App.git'
+        sh 'ls -l'  // Debugging step to verify files
+    }
+}
 
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    mkdir -p ~/.npm
-                    cd client && npm cache clean --force && npm install --legacy-peer-deps
-                    cd api && npm cache clean --force && npm install --legacy-peer-deps
-                '''
-            }
-        }
+
+    stage('Install Dependencies') {
+    steps {
+        sh '''
+            if ! command -v npm &> /dev/null; then
+                echo "Error: npm not found! Please install Node.js."
+                exit 1
+            fi
+            if [ ! -d "client" ] || [ ! -d "api" ]; then
+                echo "Error: Required directories not found!"
+                exit 1
+            fi
+            cd client && npm cache clean --force && npm install --legacy-peer-deps
+            cd ../api && npm cache clean --force && npm install --legacy-peer-deps
+        '''
+    }
+}
+
 
         stage('Build & Test in Parallel') {
             parallel {
