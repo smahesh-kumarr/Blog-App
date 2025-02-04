@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext} from 'react';
 import { UserContext } from './UserContext';
 import { FaCamera, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import Header from './Header';
@@ -21,7 +21,7 @@ const Profile = () => {
     if (userInfo?.email) {
       fetchProfile();
     }
-  }, [userInfo]);
+  }, []);
 
   const fetchProfile = async () => {
     try {

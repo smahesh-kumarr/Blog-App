@@ -33,7 +33,7 @@ const HomePage = () => {
     } else {
       setMyBlogs([]);
     }
-  }, [userInfo]);
+  }, []);
 
   const fetchAllBlogs = async () => {
     try {
