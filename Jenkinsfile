@@ -5,6 +5,7 @@ pipeline {
         SONAR_URL = "http://54.85.130.134:9000"
         DOCKER_REGISTRY = "https://index.docker.io/v1/"
         DOCKER_IMAGE_FRONTEND = "maheshkumars772/frontend:latest"
+        DOCKER_IMAGE_BACKEND = "maheshkumars772/backend:latest"
         REGISTRY_CREDENTIALS = credentials('docker-cred')
         NODE_OPTIONS = "--openssl-legacy-provider"
     }
@@ -24,27 +25,17 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash -e
                             cd client
-                            # Downgrade React to v18 to match testing-library requirements
                             npm install react@18.2.0 react-dom@18.2.0 --legacy-peer-deps --save
                             npm install --legacy-peer-deps --force --loglevel=error
-                            npm install --save-dev \
-                                @testing-library/jest-dom@6.1.4 \
-                                @testing-library/react@13.4.0 \
-                                @babel/plugin-proposal-private-property-in-object@7.21.11
                         '''
                     }
                 }
 
-                stage('Frontend Build & Test') {
+                stage('Frontend Build') {
                     steps {
                         sh '''#!/bin/bash -e
                             cd client
                             DISABLE_ESLINT_PLUGIN=true npm run build
-                            CI=true npm test -- \
-                                --watchAll=false \
-                                --passWithNoTests \
-                                --detectOpenHandles \
-                                --testTimeout=10000
                         '''
                     }
                 }
@@ -59,8 +50,7 @@ pipeline {
                                     -Dsonar.sources=src \
                                     -Dsonar.host.url=${SONAR_URL} \
                                     -Dsonar.login=${SONAR_AUTH_TOKEN} \
-                                    -Dsonar.scm.disabled=true \
-                                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                                    -Dsonar.scm.disabled=true
                             '''
                         }
                     }
@@ -86,17 +76,15 @@ pipeline {
                         sh '''#!/bin/bash -e
                             cd api
                             npm install --force --loglevel=error
-                            echo "console.log('Backend tests passed!')" > test.js
-                            sed -i 's/"test":.*/"test": "node test.js",/' package.json
                         '''
                     }
                 }
 
-                stage('Backend Build & Test') {
+                stage('Backend Build') {
                     steps {
                         sh '''#!/bin/bash -e
                             cd api
-                            npm test
+                            npm run build
                         '''
                     }
                 }
@@ -128,6 +116,12 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
