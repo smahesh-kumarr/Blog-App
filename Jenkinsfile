@@ -21,22 +21,21 @@ pipeline {
     
     stage('Install Dependencies') {
     steps {
-        sh '''
-            if ! command -v npm &> /dev/null; then
-                echo "Error: npm not found! Please install Node.js."
-                exit 1
-            fi
-            if [ ! -d "client" ] || [ ! -d "api" ]; then
-                echo "Error: Required directories not found!"
-                exit 1
-            fi
-            cd client && npm cache clean --force && npm install --legacy-peer-deps
-            cd ../api && npm cache clean --force && npm install --legacy-peer-deps
+        sh '''#!/bin/bash
+                export PATH=$PATH:/usr/bin
+                which npm || { echo "Error: npm not found!"; exit 1; }
+                
+                if [ ! -d "client" ] || [ ! -d "api" ]; then
+                    echo "Error: Required directories not found!"
+                    exit 1
+                fi
+                
+                cd client && npm cache clean --force && npm install --legacy-peer-deps
+                cd ../api && npm cache clean --force && npm install --legacy-peer-deps
         '''
+
     }
 }
-
-
         stage('Build & Test in Parallel') {
             parallel {
                 stage('Frontend Build & Test') {
