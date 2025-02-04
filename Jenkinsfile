@@ -7,7 +7,6 @@ pipeline {
         DOCKER_IMAGE_FRONTEND = "maheshkumars772/frontend:latest"
         DOCKER_IMAGE_BACKEND = "maheshkumars772/backend:latest"
         NODE_OPTIONS = "--openssl-legacy-provider"
-        BUILDX_VERSION = "v0.11.2"
     }
 
     stages {
@@ -77,23 +76,15 @@ pipeline {
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
                                 sh '''
-                                    # Install and configure buildx
-                                    mkdir -p ~/.docker/cli-plugins
-                                    wget https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-amd64 -O ~/.docker/cli-plugins/docker-buildx
-                                    chmod +x ~/.docker/cli-plugins/docker-buildx
-                                    docker buildx create --use --name mybuilder
-                                    docker buildx inspect --bootstrap
+                                    # Login to Docker registry
+                                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
                                     
                                     # Build and push
-                                    docker buildx build \
-                                        --platform linux/amd64 \
-                                        --tag ${DOCKER_IMAGE_FRONTEND} \
-                                        --push \
-                                        --no-cache \
-                                        ./client
+                                    docker build -t ${DOCKER_IMAGE_FRONTEND} ./client
+                                    docker push ${DOCKER_IMAGE_FRONTEND}
                                     
                                     # Cleanup
-                                    docker buildx rm mybuilder
+                                    docker rmi ${DOCKER_IMAGE_FRONTEND}
                                 '''
                             }
                         }
@@ -147,24 +138,15 @@ pipeline {
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
                                 sh '''
-                                    # Install and configure buildx
-                                    mkdir -p ~/.docker/cli-plugins
-                                    wget https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.linux-amd64 -O ~/.docker/cli-plugins/docker-buildx
-                                    chmod +x ~/.docker/cli-plugins/docker-buildx
-                                    docker buildx create --use --name mybuilder
-                                    docker buildx inspect --bootstrap
+                                    # Login to Docker registry
+                                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
                                     
                                     # Build and push
-                                    docker buildx build \
-                                        --platform linux/amd64 \
-                                        --tag ${DOCKER_IMAGE_BACKEND} \
-                                        --push \
-                                        --no-cache \
-                                        --build-arg NODE_ENV=production \
-                                        ./api
+                                    docker build -t ${DOCKER_IMAGE_BACKEND} ./api
+                                    docker push ${DOCKER_IMAGE_BACKEND}
                                     
                                     # Cleanup
-                                    docker buildx rm mybuilder
+                                    docker rmi ${DOCKER_IMAGE_BACKEND}
                                 '''
                             }
                         }
@@ -177,14 +159,13 @@ pipeline {
     post {
         failure {
             sh '''
-                docker buildx rm mybuilder || true
                 docker container prune -f
                 docker image prune -af
             '''
         }
         always {
             cleanWs()
-            sh 'docker logout ${DOCKER_REGISTRY} || true'
+            sh 'docker logout || true'
         }
     }
 }

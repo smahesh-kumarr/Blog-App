@@ -1,19 +1,15 @@
-FROM node:22.13-alpine
+FROM node:18-alpine  # Using LTS version
 
 WORKDIR /app
 
 COPY package*.json ./
 
-# Install build dependencies and bcrypt requirements
-RUN apk add --no-cache --virtual .build-deps \
-    python3 \
-    make \
-    g++ \
-    && npm install \
-    && apk del .build-deps
+# Install build tools and dependencies
+RUN apk add --no-cache python3 make g++ && \
+    npm install --legacy-peer-deps
 
 COPY . .
 
-EXPOSE 4000
+EXPOSE 5000
 
 CMD ["npx", "nodemon", "index.js"]
