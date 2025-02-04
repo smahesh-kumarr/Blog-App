@@ -20,14 +20,25 @@ pipeline {
             parallel {
                 stage('Frontend Build & Test') {
                     steps {
-                        sh 'cd client && npm install && npm run build'
-                        sh 'cd client && npm test'
+                        sh '''
+                            cd client
+                            rm -rf node_modules package-lock.json
+                            npm cache clean --force
+                            npm install --legacy-peer-deps
+                            npm run build
+                            npm test
+                        '''
                     }
                 }
                 stage('Backend Build & Test') {
                     steps {
-                        sh 'cd api && npm install'
-                        sh 'cd api && npm test'
+                        sh '''
+                            cd api
+                            rm -rf node_modules package-lock.json
+                            npm cache clean --force
+                            npm install --legacy-peer-deps
+                            npm test
+                        '''
                     }
                 }
             }
@@ -70,9 +81,8 @@ pipeline {
                     steps {
                         script {
                             sh 'cd client && docker build -t ${DOCKER_IMAGE_FRONTEND} .'
-                            def dockerImageFrontend = docker.image("${DOCKER_IMAGE_FRONTEND}")
                             docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
-                                dockerImageFrontend.push()
+                                sh 'docker push ${DOCKER_IMAGE_FRONTEND}'
                             }
                         }
                     }
@@ -81,42 +91,9 @@ pipeline {
                     steps {
                         script {
                             sh 'cd api && docker build -t ${DOCKER_IMAGE_BACKEND} .'
-                            def dockerImageBackend = docker.image("${DOCKER_IMAGE_BACKEND}")
                             docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
-                                dockerImageBackend.push()
+                                sh 'docker push ${DOCKER_IMAGE_BACKEND}'
                             }
-                        }
-                    }
-                }
-            }
-        }
-        stage('Update Kubernetes Deployment') {
-            parallel {
-                stage('Update Frontend Deployment') {
-                    steps {
-                        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                            sh '''
-                                git config user.email "maheshkumar08042006@gmail.com"
-                                git config user.name "smahesh-kumarr"
-                                sed -i "s/replaceImageTag/latest/g" ../argo-manifests/frontend/deployment.yml
-                                git add ../argo-manifests/frontend/deployment.yml
-                                git commit -m "Update frontend image to latest"
-                                git push https://${GITHUB_TOKEN}@github.com/smahesh-kumarr/argo-manifests.git HEAD:main
-                            '''
-                        }
-                    }
-                }
-                stage('Update Backend Deployment') {
-                    steps {
-                        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                            sh '''
-                                git config user.email "maheshkumar08042006@gmail.com"
-                                git config user.name "smahesh-kumarr"
-                                sed -i "s/replaceImageTag/latest/g" ../argo-manifests/backend/deployment.yml
-                                git add ../argo-manifests/backend/deployment.yml
-                                git commit -m "Update backend image to latest"
-                                git push https://${GITHUB_TOKEN}@github.com/smahesh-kumarr/argo-manifests.git HEAD:main
-                            '''
                         }
                     }
                 }
