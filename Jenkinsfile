@@ -75,12 +75,6 @@ pipeline {
                                 usernameVariable: 'DOCKER_USER',
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
-                                script {
-            withCredentials([usernamePassword(
-                credentialsId: 'docker-cred',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-                    )]) {
                                 sh '''
                                 # Install and configure buildx
                                 docker buildx install
@@ -95,7 +89,7 @@ pipeline {
                                     ./client
                                 
                                 # Cleanup
-                                docker buildx rm
+                                docker buildx rm mybuilder
                             '''
                             }
                         }
@@ -148,16 +142,10 @@ pipeline {
                                 usernameVariable: 'DOCKER_USER',
                                 passwordVariable: 'DOCKER_PASS'
                             )]) {
-                                script {
-            withCredentials([usernamePassword(
-                credentialsId: 'docker-cred',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-                    )]) {
                             sh '''
                                 # Install and configure buildx
                                 docker buildx install
-                                docker buildx create --use
+                                docker buildx create --use --name mybuilder
                                 
                                 # Build with buildx
                                 docker buildx build \
@@ -165,10 +153,11 @@ pipeline {
                                     --tag ${DOCKER_IMAGE_BACKEND} \
                                     --push \
                                     --no-cache \
+                                    --build-arg NODE_ENV=production \
                                     ./api
                                 
                                 # Cleanup
-                                docker buildx rm
+                                docker buildx rm mybuilder
                             '''
                             }
                         }
