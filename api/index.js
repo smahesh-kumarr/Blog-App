@@ -9,9 +9,10 @@ const fs = require('fs');
 const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 require('dotenv').config();
+const morgan = require('morgan');
 
 const mongoURI = process.env.MONGO_URI;
-const port = process.env.PORT || 4000;
+const port = 5000;
 
 // Cloudinary configuration
 cloudinary.config({
@@ -27,7 +28,7 @@ console.log('Cloudinary Configuration:', {
 });
 
 const app = express();
-
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
@@ -365,22 +366,11 @@ app.put('/profile/update', upload.single('profileImage'), async (req, res) => {
     }
 });
 
-mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000, // Increase timeout to 30s
-    socketTimeoutMS: 30000,
-})
-.then(() => {
-    console.log("✅ Connected to MongoDB");
-    app.listen(4000, () => {
-        console.log("🚀 Server is running on port 4000");
-    });
-})
-.catch((err) => {
-    console.error("❌ MongoDB Connection Failed:", err.message);
-    console.log("Retrying in 5 seconds...");
-    setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
 
-connectWithRetry();
+mongoose.connect(mongoURI)
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
+  
