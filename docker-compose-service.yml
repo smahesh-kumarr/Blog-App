@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  frontend:
+    image: maheshkumars772/frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - blog-app-network
+  backend:
+    image: maheshkumars772/backend
+    ports:
+      - "4000:4000"
+    networks:
+      - blog-app-network
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - PORT=4000
+networks:
+  blog-app-network:
+    driver: bridge
