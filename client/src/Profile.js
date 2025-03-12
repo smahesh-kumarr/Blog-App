@@ -25,7 +25,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/profile/${userInfo.email}`);
+      const response = await fetch(`http://localhost:4000/profile/${userInfo.email}`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
