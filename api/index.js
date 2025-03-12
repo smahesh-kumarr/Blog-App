@@ -12,7 +12,7 @@ require('dotenv').config();
 const morgan = require('morgan');
 
 const mongoURI = process.env.MONGO_URI;
-const port = 5000;
+const port = 4000;
 
 // Cloudinary configuration
 cloudinary.config({
