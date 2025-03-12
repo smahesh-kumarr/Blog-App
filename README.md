@@ -100,29 +100,24 @@ pipeline {
         }
     }
 }
-🔮 Future Enhancements (Version 2.0)
-ArgoCD Integration for GitOps-style deployments 🌐
 
-Kubernetes cluster setup for staging/production 🚢
+---
 
-Automated testing with Selenium/Cypress 🧪
+## 🔮 Future Enhancements (Version 2.0)  
 
-Slack notifications for build status 📢
+- **ArgoCD Integration** for GitOps-style deployments 🌐  
+- Kubernetes cluster setup for staging/production 🚢  
+- Automated testing with Selenium/Cypress 🧪  
+- Slack notifications for build status 📢  
 
-👨💻 Contributors
-Mahesh Kumar
-GitHub
-Docker
+---
 
-Note: This README will auto-update when ArgoCD is integrated! Stay tuned for v2.0! 🎉
+## 👨💻 Contributors  
 
-Copy
+**Mahesh Kumar**  
+[![GitHub](https://img.shields.io/badge/GitHub-Profile-%23181717?logo=github)](https://github.com/smahesh-kumarr)  
+[![Docker](https://img.shields.io/badge/Docker%20Hub-maheshkumars772-%232496ED?logo=docker)](https://hub.docker.com/u/maheshkumars772)  
 
-### ✨ Features of This README:  
-1. **Badges**: Jenkins, Docker, AWS, SonarQube status indicators.  
-2. **Emojis**: Visual cues for stages (e.g., 🐳 for Docker).  
-3. **Code Blocks**: Highlight pipeline logic.  
-4. **Version 2.0 Teaser**: Builds anticipation for ArgoCD.  
-5. **Responsive Tables**: Clean tech stack breakdown.  
+---
 
-Just copy-paste this into your repo’s `README.md` and customize the placeholders! 🎉
+> **Note**: This README will auto-update when ArgoCD is integrated! Stay tuned for v2.0! 🎉   🎉
