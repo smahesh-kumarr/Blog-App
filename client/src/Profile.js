@@ -81,7 +81,7 @@ const Profile = () => {
         formData.append('profileImage', profile.profileImage);
       }
 
-      const response = await fetch('http://localhost:5000/profile/update', {
+      const response = await fetch('http://localhost:4000/profile/update', {
         method: 'PUT',
         body: formData
       });
