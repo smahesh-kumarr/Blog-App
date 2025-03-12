@@ -45,15 +45,39 @@ A full-stack MERN (MongoDB, Express, React, Node.js) blog application with a **f
 - Docker Hub credentials stored in Jenkins Secrets 🔑  
 
 ### 🔧 Pipeline Stages  
-```bash
-1. 🧹 System Cleanup           # Docker prune, npm cache clean  
-2. 📥 Checkout Code            # Git clone from GitHub  
-3. 🖥️ Frontend Pipeline        # Install → Build → SonarQube → Docker Push  
-4. ⚙️ Backend Pipeline         # Install → Build → SonarQube → Docker Push  
-5. 🧼 Post-Build Cleanup       # Workspace cleanup, Docker logout  
-🛠️ Jenkins Pipeline Snippet
-groovy
-Copy
+---
+
+## 🔄 CI/CD Pipeline Stages  
+
+1. 🧹 **System Cleanup**  
+   - Docker system prune  
+   - npm cache clean  
+   - Remove old `node_modules`  
+
+2. 📥 **Checkout Code**  
+   - Git clone from GitHub repository  
+
+3. 🖥️ **Frontend Pipeline**  
+   - Install dependencies (`npm install`)  
+   - Build React app (`npm run build`)  
+   - SonarQube code analysis  
+   - Docker build & push  
+
+4. ⚙️ **Backend Pipeline**  
+   - Install dependencies (`npm install`)  
+   - Build Node.js app  
+   - SonarQube code analysis  
+   - Docker build & push  
+
+5. 🧼 **Post-Build Cleanup**  
+   - Workspace cleanup  
+   - Docker logout  
+
+---
+
+## 🛠️ Jenkins Pipeline Snippet  
+
+```groovy
 pipeline {
     agent any
     environment {
@@ -65,13 +89,13 @@ pipeline {
         stage('Frontend Build') {
             steps {
                 sh 'npm install --legacy-peer-deps'
-                sh 'DISABLE_ESLINT_PLUGIN=true npm run build' 🏗️
+                sh 'DISABLE_ESLINT_PLUGIN=true npm run build'
             }
         }
         stage('Docker Push') {
             steps {
-                sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin' 🔒
-                sh 'docker build -t $DOCKER_IMAGE_FRONTEND ./client' 🐳
+                sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                sh 'docker build -t $DOCKER_IMAGE_FRONTEND ./client'
             }
         }
     }
