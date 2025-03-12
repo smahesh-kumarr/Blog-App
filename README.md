@@ -14,7 +14,7 @@ A full-stack MERN (MongoDB, Express, React, Node.js) blog application with a **f
 ---
 
 ## 🔄 CI/CD Pipeline Architecture  
-![CI Pipeline](https://via.placeholder.com/800x400.png?text=CI+Pipeline+Diagram+-+ArgoCD+Coming+Soon)  
+![CI Pipeline](./my-workout-images/Pipelin-BlueOcean.png)  
 *(Replace with your architecture diagram)*  
 
 ### 🛠️ Pipeline Highlights  
